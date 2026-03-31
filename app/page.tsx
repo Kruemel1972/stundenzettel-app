@@ -278,7 +278,7 @@ export default function Home() {
       ? [...entries, currentEntry]
       : entries;
 
-    const { data: report, error } = await supabase
+    const { data: report, error } = await getSupabase()
       .from("daily_reports")
       .insert([
         {
@@ -496,7 +496,7 @@ export default function Home() {
     value={diesel}
     onChange={(e) => setDiesel(e.target.value)}
     placeholder="Diesel"
-    style={{ minHeight: 44, fontSize: 16, padding: "8pxx 10px" }}
+    style={{ minHeight: 44, fontSize: 16, padding: "8px 10px" }}
   />
 
   <input

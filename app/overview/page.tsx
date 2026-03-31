@@ -84,6 +84,7 @@ const calculateEntryHours = (start: string | null, end: string | null) => {
 
 export default function ReportDetailPage() {
   const params = useParams<{ id: string }>();
+  const supabase = getSupabase();
 
   const [report, setReport] = useState<Report | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);

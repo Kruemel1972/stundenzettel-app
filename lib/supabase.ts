@@ -1,4 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+
+let supabaseInstance: SupabaseClient | null = null;
 
 export function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -12,5 +14,9 @@ export function getSupabase() {
     throw new Error("NEXT_PUBLIC_SUPABASE_ANON_KEY fehlt");
   }
 
-  return createClient(url, key);
+  if (!supabaseInstance) {
+    supabaseInstance = createClient(url, key);
+  }
+
+  return supabaseInstance;
 }

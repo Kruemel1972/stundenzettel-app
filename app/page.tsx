@@ -36,6 +36,7 @@ const germanDate = (isoDate: string) => {
 };
 
 export default function Home() {
+  const supabase = getSupabase();
   const [employee, setEmployee] = useState<string | null>(null);
   const [inputName, setInputName] = useState("");
 

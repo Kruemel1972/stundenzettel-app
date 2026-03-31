@@ -2,10 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { getsupabase } from "../../../lib/supabase";
-
-export default function OverviewPage() {
-  const supabase = getSupabase();
+import { getSupabase } from "../../../lib/supabase";
 
 type Report = {
   id: number;
@@ -104,7 +101,7 @@ const calculateNetHours = (
   const e = new Date(`1970-01-01T${end}`);
 
   let diff = (e.getTime() - s.getTime()) / (1000 * 60);
-  diff = diff - (breakMinutes || 0);
+  diff -= breakMinutes || 0;
 
   if (diff < 0) diff = 0;
 
@@ -118,12 +115,14 @@ const entryHours = (start: string | null, end: string | null) => {
   const e = new Date(`1970-01-01T${end}`);
 
   let diff = (e.getTime() - s.getTime()) / (1000 * 60 * 60);
+
   if (diff < 0) diff = 0;
 
   return diff;
 };
 
 export default function ReportDetailPage() {
+  const supabase = getSupabase();
   const params = useParams<{ id: string }>();
 
   const [report, setReport] = useState<Report | null>(null);
@@ -140,6 +139,7 @@ export default function ReportDetailPage() {
   useEffect(() => {
     if (!params?.id) return;
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params?.id]);
 
   const fetchData = async () => {
@@ -154,7 +154,7 @@ export default function ReportDetailPage() {
         .eq("id", reportId)
         .single();
 
-      if (reportError) {
+      if (reportError || !reportData) {
         console.error("DETAIL REPORT ERROR:", reportError);
         setLoading(false);
         return;
@@ -172,7 +172,7 @@ export default function ReportDetailPage() {
         console.error("DETAIL ENTRIES ERROR:", entryError);
         setEntries([]);
       } else {
-        setEntries(entryData || []);
+        setEntries((entryData as Entry[]) || []);
       }
 
       const { data: locationsData } = await supabase
@@ -215,22 +215,22 @@ export default function ReportDetailPage() {
 
       const employeeRate =
         (employeesData as EmployeeRow[] | null)?.find(
-          (e) => e.name === reportData.employee
+          (employee) => employee.name === reportData.employee
         )?.hourly_rate || 0;
 
       const tractorMap: Record<string, number> = {};
-      (tractorsData as TractorRow[] | null)?.forEach((t) => {
-        tractorMap[t.name] = Number(t.cost_per_hour || 0);
+      (tractorsData as TractorRow[] | null)?.forEach((tractor) => {
+        tractorMap[tractor.name] = Number(tractor.cost_per_hour || 0);
       });
 
       const implementMap: Record<string, number> = {};
-      (implementsData as ImplementRow[] | null)?.forEach((i) => {
-        implementMap[i.name] = Number(i.cost_per_hour || 0);
+      (implementsData as ImplementRow[] | null)?.forEach((implement) => {
+        implementMap[implement.name] = Number(implement.cost_per_hour || 0);
       });
 
       const activityBillingMap: Record<string, string> = {};
-      (activitiesData as ActivityRow[] | null)?.forEach((a) => {
-        activityBillingMap[a.name] = a.billing_type || "";
+      (activitiesData as ActivityRow[] | null)?.forEach((activity) => {
+        activityBillingMap[activity.name] = activity.billing_type || "";
       });
 
       setCostMaps({
@@ -239,8 +239,8 @@ export default function ReportDetailPage() {
         implementMap,
         activityBillingMap,
       });
-    } catch (err) {
-      console.error("DETAIL PAGE UNEXPECTED ERROR:", err);
+    } catch (error) {
+      console.error("DETAIL PAGE UNEXPECTED ERROR:", error);
     } finally {
       setLoading(false);
     }
@@ -255,10 +255,12 @@ export default function ReportDetailPage() {
 
       const employeeCost =
         billingType === "hour" ? hours * costMaps.employeeRate : 0;
+
       const tractorCost =
         billingType === "hour"
           ? hours * (costMaps.tractorMap[entry.tractor || ""] || 0)
           : 0;
+
       const implementCost =
         billingType === "hour"
           ? hours * (costMaps.implementMap[entry.implement || ""] || 0)
@@ -345,7 +347,11 @@ export default function ReportDetailPage() {
         </div>
         <div>
           <strong>Nettoarbeitszeit:</strong>{" "}
-          {calculateNetHours(report.day_start, report.day_end, report.break_minutes)}
+          {calculateNetHours(
+            report.day_start,
+            report.day_end,
+            report.break_minutes
+          )}
         </div>
         <div>
           <strong>Diesel:</strong>{" "}
@@ -374,13 +380,16 @@ export default function ReportDetailPage() {
       >
         <h2 style={{ margin: 0 }}>Pausen</h2>
         <div>
-          <strong>Pause 1:</strong> {formatTime(report.pause1_start)} - {formatTime(report.pause1_end)}
+          <strong>Pause 1:</strong> {formatTime(report.pause1_start)} -{" "}
+          {formatTime(report.pause1_end)}
         </div>
         <div>
-          <strong>Pause 2:</strong> {formatTime(report.pause2_start)} - {formatTime(report.pause2_end)}
+          <strong>Pause 2:</strong> {formatTime(report.pause2_start)} -{" "}
+          {formatTime(report.pause2_end)}
         </div>
         <div>
-          <strong>Pause 3:</strong> {formatTime(report.pause3_start)} - {formatTime(report.pause3_end)}
+          <strong>Pause 3:</strong> {formatTime(report.pause3_start)} -{" "}
+          {formatTime(report.pause3_end)}
         </div>
       </div>
 
@@ -411,8 +420,13 @@ export default function ReportDetailPage() {
         }}
       >
         <h2 style={{ margin: 0 }}>Kostenübersicht</h2>
-        <div><strong>Mitarbeiterkostensatz:</strong> {costMaps.employeeRate.toFixed(2)} € / h</div>
-        <div><strong>Gesamtkosten Tageszettel:</strong> {totalDayCost.toFixed(2)} €</div>
+        <div>
+          <strong>Mitarbeiterkostensatz:</strong>{" "}
+          {costMaps.employeeRate.toFixed(2)} € / h
+        </div>
+        <div>
+          <strong>Gesamtkosten Tageszettel:</strong> {totalDayCost.toFixed(2)} €
+        </div>
 
         <div style={{ marginTop: 8 }}>
           <strong>Kosten je Betrieb:</strong>
@@ -470,7 +484,9 @@ export default function ReportDetailPage() {
                     <td style={tdStyle}>{info?.companyName || "-"}</td>
                     <td style={tdStyle}>{formatTime(entry.start_time)}</td>
                     <td style={tdStyle}>{formatTime(entry.end_time)}</td>
-                    <td style={tdStyle}>{cost ? `${cost.hours.toFixed(2)} h` : "-"}</td>
+                    <td style={tdStyle}>
+                      {cost ? `${cost.hours.toFixed(2)} h` : "-"}
+                    </td>
                     <td style={tdStyle}>{entry.activity || "-"}</td>
                     <td style={tdStyle}>
                       {cost?.billingType === "hour"

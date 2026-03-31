@@ -37,6 +37,7 @@ const germanDate = (isoDate: string) => {
 
 export default function Home() {
   const supabase = getSupabase();
+  
   const [employee, setEmployee] = useState<string | null>(null);
   const [inputName, setInputName] = useState("");
 
@@ -278,7 +279,7 @@ export default function Home() {
       ? [...entries, currentEntry]
       : entries;
 
-    const { data: report, error } = await supabase()
+    const { data: report, error } = await supabase
       .from("daily_reports")
       .insert([
         {

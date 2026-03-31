@@ -278,7 +278,7 @@ export default function Home() {
       ? [...entries, currentEntry]
       : entries;
 
-    const { data: report, error } = await getSupabase()
+    const { data: report, error } = await supabase()
       .from("daily_reports")
       .insert([
         {

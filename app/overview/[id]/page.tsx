@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { supabase } from "../../../lib/supabase";
+import { getsupabase } from "../../../lib/supabase";
+
+export default function OverviewPage() {
+  const supabase = getSupabase();
 
 type Report = {
   id: number;

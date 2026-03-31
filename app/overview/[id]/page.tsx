@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { getsupabase } from "../../../lib/supabase";
+import { getSupabase } from "../../../lib/supabase";
 
 type Report = {
   id: number;

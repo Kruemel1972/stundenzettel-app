@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getsupabase } from "../lib/supabase";
+import { getSupabase } from "../lib/supabase";
 
 type Entry = {
   location: string;

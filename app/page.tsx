@@ -258,10 +258,15 @@ export default function Home() {
       return;
     }
 
+    if (!dayEnd) {
+      alert("Bitte zuerst Arbeitsende drücken.");
+      return;
+    }
+
     setSaving(true);
 
     try {
-      const finalDayEnd = dayEnd || nowTime();
+      const finalDayEnd = dayEnd;
       const pauseMinutes = calculatePauseMinutes();
       const workHours = calculateWorkTime(finalDayEnd);
 

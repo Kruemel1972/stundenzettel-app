@@ -524,7 +524,7 @@ export default function Home() {
     >
       <div
         style={{
-          marginBottom: 8,
+          marginBottom: 5,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",

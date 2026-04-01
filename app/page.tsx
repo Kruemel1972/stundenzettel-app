@@ -348,7 +348,7 @@ export default function Home() {
     );
 
     resetForm();
-    setScreenState("saved");
+    setScreenState("goodbye");
   };
 
   const compactButtonStyle: React.CSSProperties = {
@@ -412,51 +412,49 @@ export default function Home() {
   }
 
   if (screenState === "goodbye") {
-    return (
-      <main
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+        fontFamily: "Arial, sans-serif",
+        background: "#f8f8f8",
+      }}
+    >
+      <div
         style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 24,
-          fontFamily: "Arial, sans-serif",
-          background: "#f8f8f8",
+          width: "100%",
+          maxWidth: 420,
+          background: "white",
+          border: "1px solid #ddd",
+          borderRadius: 18,
+          padding: 28,
+          textAlign: "center",
         }}
       >
-        <div
+        <div style={{ fontSize: 52, marginBottom: 10 }}>🌙</div>
+        <h1 style={{ margin: "0 0 12px 0", fontSize: 26 }}>Feierabend</h1>
+        <p style={{ margin: "0 0 22px 0", fontSize: 18, lineHeight: 1.5 }}>
+          Ich wünsch dir einen schönen Feierabend.
+        </p>
+        <button
+          onClick={() => setScreenState("form")}
           style={{
-            width: "100%",
-            maxWidth: 420,
-            background: "white",
-            border: "1px solid #ddd",
-            borderRadius: 18,
-            padding: 28,
-            textAlign: "center",
+            ...compactButtonStyle,
+            background: "#0d6efd",
+            border: "1px solid #0d6efd",
+            color: "white",
           }}
         >
-          <h1 style={{ margin: "0 0 12px 0", fontSize: 26 }}>Feierabend</h1>
-          <p style={{ margin: "0 0 18px 0", fontSize: 17, lineHeight: 1.5 }}>
-            Dein Arbeitstag ist abgeschlossen.
-          </p>
-          <p style={{ margin: "0 0 22px 0", fontSize: 15, color: "#666" }}>
-            Du kannst die App jetzt schließen.
-          </p>
-          <button
-            onClick={() => setScreenState("form")}
-            style={{
-              ...compactButtonStyle,
-              background: "#0d6efd",
-              border: "1px solid #0d6efd",
-              color: "white",
-            }}
-          >
-            Neuer Tag
-          </button>
-        </div>
-      </main>
-    );
-  }
+          Neuer Tag
+        </button>
+      </div>
+    </main>
+  );
+}
 
   if (!employee) {
     return (
@@ -526,14 +524,14 @@ export default function Home() {
     >
       <div
         style={{
-          marginBottom: 14,
+          marginBottom: 8,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           gap: 12,
         }}
       >
-        <div style={{ fontSize: 20, fontWeight: 700 }}>
+        <div style={{ fontSize: 16, fontWeight: 400, color: "#444" }}>
           {firstNameOnly(employee)}
         </div>
         <div style={{ fontSize: 16, color: "#444" }}>{germanDate(date)}</div>
@@ -795,20 +793,7 @@ export default function Home() {
         Speichern
       </button>
 
-      <button
-        onClick={handleLogout}
-        style={{
-          marginTop: 12,
-          width: "100%",
-          minHeight: 42,
-          fontSize: 15,
-          borderRadius: 10,
-          border: "1px solid #ccc",
-          background: "#fff",
-        }}
-      >
-        Abmelden
-      </button>
+      
     </main>
   );
 }

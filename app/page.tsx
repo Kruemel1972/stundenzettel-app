@@ -713,18 +713,18 @@ export default function Home() {
 
           <div
             style={{
-              marginBottom: 14,
+              marginBottom: 10,
               border: "1px solid #ccc",
               borderRadius: 10,
-              padding: 12,
+              padding: 8,
               display: "grid",
-              gap: 10,
+              gap: 8,
             }}
           >
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "110px 1fr",
+                gridTemplateColumns: "80px 1fr",
                 alignItems: "center",
                 gap: 10,
               }}
@@ -743,7 +743,7 @@ export default function Home() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "110px 1fr",
+                gridTemplateColumns: "80px 1fr",
                 alignItems: "center",
                 gap: 10,
               }}
@@ -762,7 +762,7 @@ export default function Home() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "110px 1fr",
+                gridTemplateColumns: "80px 1fr",
                 alignItems: "center",
                 gap: 10,
               }}

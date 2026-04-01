@@ -308,7 +308,7 @@ if (!dayEnd) {
           report_date: date || null,
           status,
           day_start: dayStart || null,
-          day_end: finaldayEnd || null,
+          day_end: finalDayEnd || null,
           pause1_start: pause1Start || null,
           pause1_end: pause1End || null,
           pause2_start: pause2Start || null,

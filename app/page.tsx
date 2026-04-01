@@ -40,6 +40,13 @@ const firstNameOnly = (fullName: string | null) => {
   return fullName.trim().split(" ")[0] || fullName;
 };
 
+const nowTime = () => {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+};
+
 export default function Home() {
   const supabase = getSupabase();
 
@@ -66,6 +73,7 @@ export default function Home() {
   const [currentEntry, setCurrentEntry] = useState<Entry>(emptyEntry());
 
   const [entryMessage, setEntryMessage] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const [diesel, setDiesel] = useState("");
   const [adblue, setAdblue] = useState("");
@@ -74,7 +82,6 @@ export default function Home() {
   const [screenState, setScreenState] = useState<"form" | "saved" | "goodbye">(
     "form"
   );
-  const [savedSummary, setSavedSummary] = useState("");
 
   useEffect(() => {
     const saved = localStorage.getItem("employee");
@@ -85,15 +92,13 @@ export default function Home() {
 
   useEffect(() => {
     if (!entryMessage) return;
-    const timer = setTimeout(() => setEntryMessage(""), 2500);
+    const timer = setTimeout(() => setEntryMessage(""), 2200);
     return () => clearTimeout(timer);
   }, [entryMessage]);
 
   useEffect(() => {
     if (screenState !== "saved") return;
-    const timer = setTimeout(() => {
-      setScreenState("goodbye");
-    }, 2000);
+    const timer = setTimeout(() => setScreenState("goodbye"), 2000);
     return () => clearTimeout(timer);
   }, [screenState]);
 
@@ -103,24 +108,13 @@ export default function Home() {
     setEmployee(inputName.trim());
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("employee");
-    setEmployee(null);
-    setInputName("");
-  };
-
-  const nowTime = () => {
-    const now = new Date();
-    const hh = String(now.getHours()).padStart(2, "0");
-    const mm = String(now.getMinutes()).padStart(2, "0");
-    return `${hh}:${mm}`;
-  };
-
   const diffMinutes = (start: string, end: string) => {
     if (!start || !end) return 0;
+
     const s = new Date(`1970-01-01T${start}`);
     const e = new Date(`1970-01-01T${end}`);
     const diff = (e.getTime() - s.getTime()) / (1000 * 60);
+
     return diff > 0 ? diff : 0;
   };
 
@@ -132,11 +126,11 @@ export default function Home() {
     );
   };
 
-  const calculateWorkTime = () => {
-    if (!dayStart || !dayEnd) return "0.00";
+  const calculateWorkTime = (finalDayEnd?: string) => {
+    if (!dayStart || !(finalDayEnd || dayEnd)) return "0.00";
 
     const start = new Date(`1970-01-01T${dayStart}`);
-    const end = new Date(`1970-01-01T${dayEnd}`);
+    const end = new Date(`1970-01-01T${finalDayEnd || dayEnd}`);
 
     let diff = (end.getTime() - start.getTime()) / (1000 * 60);
     diff -= calculatePauseMinutes();
@@ -174,29 +168,14 @@ export default function Home() {
   const handlePauseButton = () => {
     const current = nowTime();
 
-    if (!pause1Start) {
-      setPause1Start(current);
-      return;
-    }
-    if (!pause1End) {
-      setPause1End(current);
-      return;
-    }
-    if (!pause2Start) {
-      setPause2Start(current);
-      return;
-    }
-    if (!pause2End) {
-      setPause2End(current);
-      return;
-    }
-    if (!pause3Start) {
-      setPause3Start(current);
-      return;
-    }
-    if (!pause3End) {
-      setPause3End(current);
-    }
+    if (!pause1Start) return setPause1Start(current);
+    if (!pause1End) return setPause1End(current);
+
+    if (!pause2Start) return setPause2Start(current);
+    if (!pause2End) return setPause2End(current);
+
+    if (!pause3Start) return setPause3Start(current);
+    if (!pause3End) return setPause3End(current);
   };
 
   const pauseButtonLabel = () => {
@@ -275,115 +254,142 @@ export default function Home() {
 
   const saveToSupabase = async () => {
     if (!dayStart) {
-  alert("Bitte zuerst Arbeitsbeginn drücken.");
-  return;
-}
-
-// Wenn Arbeitsende fehlt → jetzt setzen
-let finalDayEnd = dayEnd;
-
-if (!dayEnd) {
-  const now = new Date();
-  const hh = String(now.getHours()).padStart(2, "0");
-  const mm = String(now.getMinutes()).padStart(2, "0");
-  finalDayEnd = `${hh}:${mm}`;
-}
-    if (!employee) {
-      alert("Kein Mitarbeiter angemeldet.");
+      alert("Bitte zuerst Arbeitsbeginn drücken.");
       return;
     }
 
-    const pauseMinutes = calculatePauseMinutes();
-    const workHours = calculateWorkTime();
+    setSaving(true);
 
-    const allEntries = hasAnyEntryData(currentEntry)
-      ? [...entries, currentEntry]
-      : entries;
+    try {
+      const finalDayEnd = dayEnd || nowTime();
+      const pauseMinutes = calculatePauseMinutes();
+      const workHours = calculateWorkTime(finalDayEnd);
 
-    const { data: report, error } = await supabase
-      .from("daily_reports")
-      .insert([
-        {
-          employee,
-          report_date: date || null,
-          status,
-          day_start: dayStart || null,
-          day_end: finalDayEnd || null,
-          pause1_start: pause1Start || null,
-          pause1_end: pause1End || null,
-          pause2_start: pause2Start || null,
-          pause2_end: pause2End || null,
-          pause3_start: pause3Start || null,
-          pause3_end: pause3End || null,
-          break_minutes: pauseMinutes,
-          notes: notes || null,
-          diesel: diesel ? Number(diesel.replace(",", ".")) : null,
-          adblue: adblue ? Number(adblue.replace(",", ".")) : null,
-          oil: oil ? Number(oil.replace(",", ".")) : null,
-        },
-      ])
-      .select()
-      .single();
+      const allEntries = hasAnyEntryData(currentEntry)
+        ? [...entries, currentEntry]
+        : entries;
 
-    if (error) {
-      console.error("REPORT ERROR:", error);
-      alert("Fehler beim Speichern des Tageszettels");
-      return;
-    }
+      const { data: report, error } = await supabase
+        .from("daily_reports")
+        .insert([
+          {
+            employee,
+            report_date: date || null,
+            status,
+            day_start: dayStart || null,
+            day_end: finalDayEnd || null,
+            pause1_start: pause1Start || null,
+            pause1_end: pause1End || null,
+            pause2_start: pause2Start || null,
+            pause2_end: pause2End || null,
+            pause3_start: pause3Start || null,
+            pause3_end: pause3End || null,
+            break_minutes: pauseMinutes,
+            notes: notes || null,
+            diesel: diesel ? Number(diesel.replace(",", ".")) : null,
+            adblue: adblue ? Number(adblue.replace(",", ".")) : null,
+            oil: oil ? Number(oil.replace(",", ".")) : null,
+          },
+        ])
+        .select()
+        .single();
 
-    if (status === "arbeit") {
-      const entryData = allEntries
-        .filter(hasAnyEntryData)
-        .map((e) => ({
-          daily_report_id: report.id,
-          location: e.location || null,
-          start_time: e.start || null,
-          end_time: e.end || null,
-          activity: e.activity || null,
-          tractor: e.tractor || null,
-          implement: e.implement || null,
-        }));
+      if (error) {
+        console.error("REPORT ERROR:", error);
+        alert("Fehler beim Speichern des Tageszettels");
+        setSaving(false);
+        return;
+      }
 
-      if (entryData.length > 0) {
-        const { error: entriesError } = await supabase
-          .from("report_entries")
-          .insert(entryData);
+      if (status === "arbeit") {
+        const entryData = allEntries
+          .filter(hasAnyEntryData)
+          .map((e) => ({
+            daily_report_id: report.id,
+            location: e.location || null,
+            start_time: e.start || null,
+            end_time: e.end || null,
+            activity: e.activity || null,
+            tractor: e.tractor || null,
+            implement: e.implement || null,
+          }));
 
-        if (entriesError) {
-          console.error("ENTRIES ERROR:", entriesError);
-          alert("Fehler beim Speichern der Einsätze");
-          return;
+        if (entryData.length > 0) {
+          const { error: entriesError } = await supabase
+            .from("report_entries")
+            .insert(entryData);
+
+          if (entriesError) {
+            console.error("ENTRIES ERROR:", entriesError);
+            alert("Fehler beim Speichern der Einsätze");
+            setSaving(false);
+            return;
+          }
         }
       }
+
+      if (navigator.vibrate) {
+        navigator.vibrate(60);
+      }
+
+      resetForm();
+      setSaving(false);
+      setScreenState("saved");
+    } catch (err) {
+      console.error(err);
+      alert("Fehler beim Speichern.");
+      setSaving(false);
     }
-
-    setSavedSummary(
-      `${firstNameOnly(employee)}, deine Daten wurden erfolgreich gespeichert.`
-    );
-
-    resetForm();
-    setScreenState("goodbye");
   };
 
   const compactButtonStyle: React.CSSProperties = {
     width: "100%",
-    minHeight: 50,
-    fontSize: 18,
+    minHeight: 48,
+    fontSize: 17,
     fontWeight: 700,
-    borderRadius: 12,
-    border: "1px solid #999",
-    background: "#f4f4f4",
+    borderRadius: 16,
+    border: "1px solid rgba(255,255,255,0.15)",
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06))",
+    color: "#0f172a",
+    boxShadow:
+      "0 10px 24px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.55)",
+    transition: "transform 0.08s ease, box-shadow 0.15s ease, opacity 0.15s ease",
+    WebkitTapHighlightColor: "transparent",
+    backdropFilter: "blur(10px)",
   };
 
   const inlineLabelInputStyle: React.CSSProperties = {
     width: "100%",
-    minHeight: 44,
-    fontSize: 16,
-    padding: "8px 10px",
-    borderRadius: 8,
-    border: "1px solid #ccc",
+    minHeight: 36,
+    fontSize: 14,
+    padding: "6px 8px",
+    borderRadius: 10,
+    border: "1px solid rgba(15,23,42,0.10)",
     textAlign: "right",
+    background: "rgba(255,255,255,0.92)",
+    boxShadow: "inset 0 1px 3px rgba(15,23,42,0.08)",
+    outline: "none",
   };
+
+  const pressIn = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.transform = "scale(0.98)";
+  };
+
+  const pressOut = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.transform = "scale(1)";
+  };
+
+  const topBar = useMemo(
+    () => ({
+      marginBottom: 6,
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 12,
+    }),
+    []
+  );
 
   if (screenState === "saved") {
     return (
@@ -395,30 +401,30 @@ if (!dayEnd) {
           justifyContent: "center",
           padding: 24,
           fontFamily: "Arial, sans-serif",
-          background: "#f3fbf5",
+          background:
+            "linear-gradient(180deg, #ecfdf5 0%, #f8fafc 100%)",
+          transition: "all 0.3s ease",
         }}
       >
         <div
           style={{
             width: "100%",
             maxWidth: 420,
-            background: "white",
-            border: "1px solid #cfe8d5",
-            borderRadius: 18,
-            padding: 28,
+            background: "rgba(255,255,255,0.92)",
+            border: "1px solid rgba(22,163,74,0.18)",
+            borderRadius: 24,
+            padding: 30,
             textAlign: "center",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+            boxShadow: "0 18px 44px rgba(15,23,42,0.10)",
+            backdropFilter: "blur(14px)",
           }}
         >
-          <div style={{ fontSize: 56, marginBottom: 12 }}>✅</div>
-          <h1 style={{ margin: "0 0 12px 0", fontSize: 28 }}>
+          <div style={{ fontSize: 58, marginBottom: 12 }}>✅</div>
+          <h1 style={{ margin: "0 0 10px 0", fontSize: 28, color: "#14532d" }}>
             Daten wurden erfolgreich gespeichert
           </h1>
-          <p style={{ margin: "0 0 8px 0", fontSize: 17, lineHeight: 1.5 }}>
-            {savedSummary}
-          </p>
-          <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#2f6f3e" }}>
-            Schönen Feierabend!
+          <p style={{ margin: 0, fontSize: 18, lineHeight: 1.5, color: "#166534" }}>
+            Ich wünsch dir einen schönen Feierabend
           </p>
         </div>
       </main>
@@ -426,72 +432,90 @@ if (!dayEnd) {
   }
 
   if (screenState === "goodbye") {
-  return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 24,
-        fontFamily: "Arial, sans-serif",
-        background: "#f8f8f8",
-      }}
-    >
-      <div
+    return (
+      <main
         style={{
-          width: "100%",
-          maxWidth: 420,
-          background: "white",
-          border: "1px solid #ddd",
-          borderRadius: 18,
-          padding: 28,
-          textAlign: "center",
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+          fontFamily: "Arial, sans-serif",
+          background:
+            "linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)",
+          transition: "all 0.3s ease",
         }}
       >
-        <div style={{ fontSize: 52, marginBottom: 10 }}>🌙</div>
-        <h1 style={{ margin: "0 0 12px 0", fontSize: 26 }}>Feierabend</h1>
-        <p style={{ margin: "0 0 22px 0", fontSize: 18, lineHeight: 1.5 }}>
-          Ich wünsch dir einen schönen Feierabend.
-        </p>
-        <button
-          onClick={() => setScreenState("form")}
+        <div
           style={{
-            ...compactButtonStyle,
-            background: "#0d6efd",
-            border: "1px solid #0d6efd",
-            color: "white",
+            width: "100%",
+            maxWidth: 420,
+            background: "rgba(255,255,255,0.94)",
+            border: "1px solid rgba(15,23,42,0.08)",
+            borderRadius: 24,
+            padding: 30,
+            textAlign: "center",
+            boxShadow: "0 18px 44px rgba(15,23,42,0.10)",
+            backdropFilter: "blur(14px)",
           }}
         >
-          Neuer Tag
-        </button>
-      </div>
-    </main>
-  );
-}
+          <div style={{ fontSize: 52, marginBottom: 10 }}>🌙</div>
+          <h1 style={{ margin: "0 0 10px 0", fontSize: 26, color: "#0f172a" }}>
+            Feierabend
+          </h1>
+          <p style={{ margin: "0 0 20px 0", fontSize: 18, lineHeight: 1.5, color: "#334155" }}>
+            Ich wünsch dir einen schönen Feierabend.
+          </p>
+          <button
+            onClick={() => setScreenState("form")}
+            onMouseDown={pressIn}
+            onMouseUp={pressOut}
+            onMouseLeave={pressOut}
+            style={{
+              ...compactButtonStyle,
+              background: "linear-gradient(180deg, #2563eb, #1d4ed8)",
+              color: "white",
+              border: "1px solid #1d4ed8",
+            }}
+          >
+            Neuer Tag
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   if (!employee) {
     return (
       <main
         style={{
-          padding: 16,
+          minHeight: "100vh",
+          padding: 18,
           maxWidth: 520,
           margin: "0 auto",
           fontFamily: "Arial, sans-serif",
+          background:
+            "linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%)",
+          display: "flex",
+          alignItems: "center",
         }}
       >
         <div
           style={{
-            border: "1px solid #ddd",
-            borderRadius: 12,
-            padding: 16,
-            background: "#fafafa",
+            width: "100%",
+            border: "1px solid rgba(15,23,42,0.08)",
+            borderRadius: 24,
+            padding: 20,
+            background: "rgba(255,255,255,0.94)",
             display: "grid",
-            gap: 10,
-            marginTop: 40,
+            gap: 12,
+            boxShadow: "0 18px 40px rgba(15,23,42,0.10)",
+            backdropFilter: "blur(14px)",
           }}
         >
-          <h2 style={{ margin: 0 }}>Mitarbeiter Anmeldung</h2>
+          <h2 style={{ margin: 0, fontSize: 24, color: "#0f172a" }}>
+            Mitarbeiter Anmeldung
+          </h2>
 
           <input
             type="text"
@@ -501,23 +525,31 @@ if (!dayEnd) {
             style={{
               minHeight: 48,
               fontSize: 16,
-              padding: 10,
-              borderRadius: 8,
-              border: "1px solid #ccc",
+              padding: 12,
+              borderRadius: 14,
+              border: "1px solid rgba(15,23,42,0.12)",
+              background: "rgba(255,255,255,0.95)",
+              boxShadow: "inset 0 1px 3px rgba(15,23,42,0.06)",
+              outline: "none",
             }}
           />
 
           <button
             onClick={handleLogin}
+            onMouseDown={pressIn}
+            onMouseUp={pressOut}
+            onMouseLeave={pressOut}
             style={{
               width: "100%",
-              minHeight: 52,
+              minHeight: 50,
               fontSize: 18,
               fontWeight: 700,
-              borderRadius: 12,
-              border: "1px solid #0d6efd",
-              background: "#0d6efd",
+              borderRadius: 16,
+              border: "1px solid #1d4ed8",
+              background: "linear-gradient(180deg, #2563eb, #1d4ed8)",
               color: "white",
+              boxShadow: "0 12px 28px rgba(37,99,235,0.26)",
+              transition: "transform 0.08s ease",
             }}
           >
             Anmelden
@@ -530,286 +562,349 @@ if (!dayEnd) {
   return (
     <main
       style={{
-        padding: 16,
+        minHeight: "100vh",
+        padding: 14,
         maxWidth: 720,
         margin: "0 auto",
         fontFamily: "Arial, sans-serif",
+        background:
+          "linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)",
       }}
     >
-      <div
-        style={{
-          marginBottom: 5,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 12,
-        }}
-      >
-        <div style={{ fontSize: 16, fontWeight: 400, color: "#444" }}>
+      <div style={topBar}>
+        <div style={{ fontSize: 16, fontWeight: 400, color: "#475569" }}>
           {firstNameOnly(employee)}
         </div>
-        <div style={{ fontSize: 16, color: "#444" }}>{germanDate(date)}</div>
+        <div style={{ fontSize: 16, color: "#475569" }}>{germanDate(date)}</div>
       </div>
 
       {entryMessage && (
         <div
           style={{
-            marginBottom: 14,
-            padding: 12,
-            border: "1px solid #999",
-            background: "#f7f7f7",
-            borderRadius: 10,
-            fontSize: 15,
+            marginBottom: 10,
+            padding: 10,
+            border: "1px solid rgba(15,23,42,0.08)",
+            background: "rgba(255,255,255,0.88)",
+            borderRadius: 14,
+            fontSize: 14,
+            color: "#334155",
+            boxShadow: "0 8px 18px rgba(15,23,42,0.05)",
           }}
         >
           {entryMessage}
         </div>
       )}
 
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontWeight: 600 }}>Status: </label>
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          style={{
-            marginLeft: 8,
-            minHeight: 40,
-            minWidth: 160,
-            fontSize: 16,
-          }}
-        >
-          <option value="arbeit">Arbeit</option>
-          <option value="krank">Krank</option>
-          <option value="urlaub">Urlaub</option>
-        </select>
-      </div>
-
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "1fr",
-          gap: 8,
-          marginBottom: 14,
+          marginBottom: 10,
+          padding: 12,
+          borderRadius: 18,
+          background: "rgba(255,255,255,0.90)",
+          border: "1px solid rgba(15,23,42,0.06)",
+          boxShadow: "0 14px 30px rgba(15,23,42,0.07)",
+          backdropFilter: "blur(12px)",
         }}
       >
-        <button
-          onClick={handleWorkButton}
-          disabled={!!dayStart && !!dayEnd}
-          style={compactButtonStyle}
-        >
-          {workButtonLabel()}
-        </button>
+        <div style={{ marginBottom: 10 }}>
+          <label style={{ fontWeight: 600, color: "#334155" }}>Status: </label>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            style={{
+              marginLeft: 8,
+              minHeight: 38,
+              minWidth: 160,
+              fontSize: 16,
+              borderRadius: 10,
+              border: "1px solid rgba(15,23,42,0.10)",
+              background: "white",
+            }}
+          >
+            <option value="arbeit">Arbeit</option>
+            <option value="krank">Krank</option>
+            <option value="urlaub">Urlaub</option>
+          </select>
+        </div>
 
-        <button
-          onClick={handlePauseButton}
-          disabled={!!pause3Start && !!pause3End}
-          style={compactButtonStyle}
-        >
-          {pauseButtonLabel()}
-        </button>
-
-        <button
-          onClick={() => setShowNotes((prev) => !prev)}
-          style={compactButtonStyle}
-        >
-          Besonderheiten
-        </button>
-      </div>
-
-      {showNotes && (
         <div
           style={{
-            marginBottom: 14,
-            border: "1px solid #ccc",
-            borderRadius: 10,
-            padding: 12,
             display: "grid",
+            gridTemplateColumns: "1fr",
             gap: 8,
+            marginBottom: 10,
           }}
         >
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Hier Besonderheiten eintragen..."
+          <button
+            onClick={handleWorkButton}
+            disabled={!!dayStart && !!dayEnd}
+            onMouseDown={pressIn}
+            onMouseUp={pressOut}
+            onMouseLeave={pressOut}
             style={{
-              width: "100%",
-              minHeight: 110,
-              fontSize: 16,
-              padding: 10,
-              borderRadius: 8,
-              border: "1px solid #ccc",
-              resize: "vertical",
+              ...compactButtonStyle,
+              opacity: !!dayStart && !!dayEnd ? 0.55 : 1,
             }}
-          />
+          >
+            {workButtonLabel()}
+          </button>
 
           <button
-            onClick={() => setShowNotes(false)}
-            style={compactButtonStyle}
-          >
-            Fertig
-          </button>
-        </div>
-      )}
-
-      {status === "arbeit" && (
-        <>
-          <div
+            onClick={handlePauseButton}
+            disabled={!!pause3Start && !!pause3End}
+            onMouseDown={pressIn}
+            onMouseUp={pressOut}
+            onMouseLeave={pressOut}
             style={{
-              marginBottom: 14,
-              border: "1px solid #ccc",
-              borderRadius: 10,
-              padding: 12,
-              display: "grid",
-              gap: 8,
+              ...compactButtonStyle,
+              opacity: !!pause3Start && !!pause3End ? 0.55 : 1,
             }}
           >
-            <select
-              value={currentEntry.location}
-              onChange={(e) => updateCurrentEntry("location", e.target.value)}
-              style={{ minHeight: 44, fontSize: 16 }}
-            >
-              <option value="">Schlag / Stall</option>
-              <option>Putenstall</option>
-              <option>Hähnchenstall</option>
-              <option>Duxtal</option>
-              <option>Königsberg</option>
-            </select>
+            {pauseButtonLabel()}
+          </button>
 
-            <select
-              value={currentEntry.activity}
-              onChange={(e) => updateCurrentEntry("activity", e.target.value)}
-              style={{ minHeight: 44, fontSize: 16 }}
-            >
-              <option value="">Tätigkeit</option>
-              <option>Ausmisten</option>
-              <option>Düngerstreuen</option>
-              <option>Walzen</option>
-              <option>Pflanzenschutz</option>
-              <option>Einlagerung</option>
-              <option>Auslagerung</option>
-            </select>
+          <button
+            onClick={() => setShowNotes((prev) => !prev)}
+            onMouseDown={pressIn}
+            onMouseUp={pressOut}
+            onMouseLeave={pressOut}
+            style={compactButtonStyle}
+          >
+            Besonderheiten
+          </button>
+        </div>
 
-            <select
-              value={currentEntry.tractor}
-              onChange={(e) => updateCurrentEntry("tractor", e.target.value)}
-              style={{ minHeight: 44, fontSize: 16 }}
-            >
-              <option value="">Traktor</option>
-              <option>LD 222</option>
-              <option>KG 700</option>
-            </select>
-
-            <select
-              value={currentEntry.implement}
-              onChange={(e) => updateCurrentEntry("implement", e.target.value)}
-              style={{ minHeight: 44, fontSize: 16 }}
-            >
-              <option value="">Gerät</option>
-              <option>Spritze</option>
-              <option>Walze</option>
-              <option>Primera 8XL</option>
-              <option>Leeb 8000</option>
-              <option>Lexion8900</option>
-            </select>
-
-            <button
-              onClick={handleEntryTimeButton}
-              disabled={!!currentEntry.start && !!currentEntry.end}
-              style={compactButtonStyle}
-            >
-              {entryTimeButtonLabel()}
-            </button>
-
-            <button onClick={addCurrentEntry} style={compactButtonStyle}>
-              Tätigkeit hinzufügen
-            </button>
-          </div>
-
+        {showNotes && (
           <div
             style={{
               marginBottom: 10,
-              border: "1px solid #ccc",
-              borderRadius: 10,
-              padding: 8,
+              border: "1px solid rgba(15,23,42,0.08)",
+              borderRadius: 16,
+              padding: 10,
               display: "grid",
               gap: 8,
+              background: "rgba(248,250,252,0.92)",
             }}
           >
-            <div
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Hier Besonderheiten eintragen..."
               style={{
-                display: "grid",
-                gridTemplateColumns: "80px 1fr",
-                alignItems: "center",
-                gap: 10,
+                width: "100%",
+                minHeight: 96,
+                fontSize: 15,
+                padding: 10,
+                borderRadius: 12,
+                border: "1px solid rgba(15,23,42,0.12)",
+                resize: "vertical",
+                background: "white",
+                boxShadow: "inset 0 1px 3px rgba(15,23,42,0.06)",
+                outline: "none",
               }}
-            >
-              <label style={{ fontSize: 16, fontWeight: 600 }}>Diesel</label>
-              <input
-                type="text"
-                inputMode="decimal"
-                pattern="[0-9]*[.,]?[0-9]*"
-                value={diesel}
-                onChange={(e) => setDiesel(e.target.value)}
-                style={inlineLabelInputStyle}
-              />
-            </div>
+            />
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "80px 1fr",
-                alignItems: "center",
-                gap: 10,
-              }}
+            <button
+              onClick={() => setShowNotes(false)}
+              onMouseDown={pressIn}
+              onMouseUp={pressOut}
+              onMouseLeave={pressOut}
+              style={compactButtonStyle}
             >
-              <label style={{ fontSize: 16, fontWeight: 600 }}>AdBlue</label>
-              <input
-                type="text"
-                inputMode="decimal"
-                pattern="[0-9]*[.,]?[0-9]*"
-                value={adblue}
-                onChange={(e) => setAdblue(e.target.value)}
-                style={inlineLabelInputStyle}
-              />
-            </div>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "80px 1fr",
-                alignItems: "center",
-                gap: 10,
-              }}
-            >
-              <label style={{ fontSize: 16, fontWeight: 600 }}>Öl</label>
-              <input
-                type="text"
-                inputMode="decimal"
-                pattern="[0-9]*[.,]?[0-9]*"
-                value={oil}
-                onChange={(e) => setOil(e.target.value)}
-                style={inlineLabelInputStyle}
-              />
-            </div>
+              Fertig
+            </button>
           </div>
-        </>
-      )}
+        )}
 
-      <button
-  onClick={saveToSupabase}
-  disabled={!dayStart}
-  style={{
-    ...compactButtonStyle,
-    background: !dayStart ? "#ccc" : "#0d6efd",
-    border: !dayStart ? "1px solid #ccc" : "1px solid #0d6efd",
-    color: "white",
-    opacity: !dayStart ? 0.7 : 1,
-  }}
->
-  Speichern
-</button>
+        {status === "arbeit" && (
+          <>
+            <div
+              style={{
+                marginBottom: 10,
+                border: "1px solid rgba(15,23,42,0.08)",
+                borderRadius: 16,
+                padding: 10,
+                display: "grid",
+                gap: 8,
+                background: "rgba(248,250,252,0.92)",
+              }}
+            >
+              <select
+                value={currentEntry.location}
+                onChange={(e) => updateCurrentEntry("location", e.target.value)}
+                style={{ minHeight: 42, fontSize: 16, borderRadius: 10 }}
+              >
+                <option value="">Schlag / Stall</option>
+                <option>Putenstall</option>
+                <option>Hähnchenstall</option>
+                <option>Duxtal</option>
+                <option>Königsberg</option>
+              </select>
 
-      
+              <select
+                value={currentEntry.activity}
+                onChange={(e) => updateCurrentEntry("activity", e.target.value)}
+                style={{ minHeight: 42, fontSize: 16, borderRadius: 10 }}
+              >
+                <option value="">Tätigkeit</option>
+                <option>Ausmisten</option>
+                <option>Düngerstreuen</option>
+                <option>Walzen</option>
+                <option>Pflanzenschutz</option>
+                <option>Einlagerung</option>
+                <option>Auslagerung</option>
+              </select>
+
+              <select
+                value={currentEntry.tractor}
+                onChange={(e) => updateCurrentEntry("tractor", e.target.value)}
+                style={{ minHeight: 42, fontSize: 16, borderRadius: 10 }}
+              >
+                <option value="">Traktor</option>
+                <option>LD 222</option>
+                <option>KG 700</option>
+              </select>
+
+              <select
+                value={currentEntry.implement}
+                onChange={(e) => updateCurrentEntry("implement", e.target.value)}
+                style={{ minHeight: 42, fontSize: 16, borderRadius: 10 }}
+              >
+                <option value="">Gerät</option>
+                <option>Spritze</option>
+                <option>Walze</option>
+                <option>Primera 8XL</option>
+                <option>Leeb 8000</option>
+                <option>Lexion8900</option>
+              </select>
+
+              <button
+                onClick={handleEntryTimeButton}
+                disabled={!!currentEntry.start && !!currentEntry.end}
+                onMouseDown={pressIn}
+                onMouseUp={pressOut}
+                onMouseLeave={pressOut}
+                style={{
+                  ...compactButtonStyle,
+                  opacity: !!currentEntry.start && !!currentEntry.end ? 0.55 : 1,
+                }}
+              >
+                {entryTimeButtonLabel()}
+              </button>
+
+              <button
+                onClick={addCurrentEntry}
+                onMouseDown={pressIn}
+                onMouseUp={pressOut}
+                onMouseLeave={pressOut}
+                style={compactButtonStyle}
+              >
+                Tätigkeit hinzufügen
+              </button>
+            </div>
+
+            <div
+              style={{
+                marginBottom: 10,
+                border: "1px solid rgba(15,23,42,0.08)",
+                borderRadius: 16,
+                padding: 8,
+                display: "grid",
+                gap: 6,
+                background: "rgba(248,250,252,0.92)",
+              }}
+            >
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "72px 1fr",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <label style={{ fontSize: 14, fontWeight: 600, color: "#334155" }}>
+                  Diesel
+                </label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*[.,]?[0-9]*"
+                  value={diesel}
+                  onChange={(e) => setDiesel(e.target.value)}
+                  style={inlineLabelInputStyle}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "72px 1fr",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <label style={{ fontSize: 14, fontWeight: 600, color: "#334155" }}>
+                  AdBlue
+                </label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*[.,]?[0-9]*"
+                  value={adblue}
+                  onChange={(e) => setAdblue(e.target.value)}
+                  style={inlineLabelInputStyle}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "72px 1fr",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <label style={{ fontSize: 14, fontWeight: 600, color: "#334155" }}>
+                  Öl
+                </label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*[.,]?[0-9]*"
+                  value={oil}
+                  onChange={(e) => setOil(e.target.value)}
+                  style={inlineLabelInputStyle}
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        <button
+          onClick={saveToSupabase}
+          disabled={!dayStart || saving}
+          onMouseDown={pressIn}
+          onMouseUp={pressOut}
+          onMouseLeave={pressOut}
+          style={{
+            ...compactButtonStyle,
+            minHeight: 48,
+            background:
+              !dayStart || saving
+                ? "linear-gradient(180deg, #cbd5e1, #94a3b8)"
+                : "linear-gradient(180deg, #2563eb, #1d4ed8)",
+            border: !dayStart || saving ? "1px solid #94a3b8" : "1px solid #1d4ed8",
+            color: "white",
+            opacity: !dayStart || saving ? 0.85 : 1,
+            boxShadow:
+              !dayStart || saving
+                ? "0 8px 18px rgba(148,163,184,0.22)"
+                : "0 14px 28px rgba(37,99,235,0.26)",
+          }}
+        >
+          {saving ? "Speichert..." : "Speichern"}
+        </button>
+      </div>
     </main>
   );
 }

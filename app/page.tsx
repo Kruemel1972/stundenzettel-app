@@ -274,6 +274,20 @@ export default function Home() {
   };
 
   const saveToSupabase = async () => {
+    if (!dayStart) {
+  alert("Bitte zuerst Arbeitsbeginn drücken.");
+  return;
+}
+
+// Wenn Arbeitsende fehlt → jetzt setzen
+let finalDayEnd = dayEnd;
+
+if (!dayEnd) {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  finalDayEnd = `${hh}:${mm}`;
+}
     if (!employee) {
       alert("Kein Mitarbeiter angemeldet.");
       return;
@@ -294,7 +308,7 @@ export default function Home() {
           report_date: date || null,
           status,
           day_start: dayStart || null,
-          day_end: dayEnd || null,
+          day_end: finaldayEnd || null,
           pause1_start: pause1Start || null,
           pause1_end: pause1End || null,
           pause2_start: pause2Start || null,
@@ -782,16 +796,18 @@ export default function Home() {
       )}
 
       <button
-        onClick={saveToSupabase}
-        style={{
-          ...compactButtonStyle,
-          background: "#0d6efd",
-          border: "1px solid #0d6efd",
-          color: "white",
-        }}
-      >
-        Speichern
-      </button>
+  onClick={saveToSupabase}
+  disabled={!dayStart}
+  style={{
+    ...compactButtonStyle,
+    background: !dayStart ? "#ccc" : "#0d6efd",
+    border: !dayStart ? "1px solid #ccc" : "1px solid #0d6efd",
+    color: "white",
+    opacity: !dayStart ? 0.7 : 1,
+  }}
+>
+  Speichern
+</button>
 
       
     </main>

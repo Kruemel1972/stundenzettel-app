@@ -156,6 +156,7 @@ export default function Home() {
 
     if (!dayEnd) {
       setDayEnd(current);
+      return;
     }
   };
 
@@ -642,7 +643,6 @@ export default function Home() {
         >
           <button
             onClick={handleWorkButton}
-            disabled={!!dayStart && !!dayEnd}
             onMouseDown={pressIn}
             onMouseUp={pressOut}
             onMouseLeave={pressOut}
@@ -885,30 +885,33 @@ export default function Home() {
           </>
         )}
 
-        <button
-          onClick={saveToSupabase}
-          disabled={!dayStart || saving}
-          onMouseDown={pressIn}
-          onMouseUp={pressOut}
-          onMouseLeave={pressOut}
-          style={{
-            ...compactButtonStyle,
-            minHeight: 48,
-            background:
-              !dayStart || saving
-                ? "linear-gradient(180deg, #cbd5e1, #94a3b8)"
-                : "linear-gradient(180deg, #2563eb, #1d4ed8)",
-            border: !dayStart || saving ? "1px solid #94a3b8" : "1px solid #1d4ed8",
-            color: "white",
-            opacity: !dayStart || saving ? 0.85 : 1,
-            boxShadow:
-              !dayStart || saving
-                ? "0 8px 18px rgba(148,163,184,0.22)"
-                : "0 14px 28px rgba(37,99,235,0.26)",
-          }}
-        >
-          {saving ? "Speichert..." : "Speichern"}
-        </button>
+     <button
+  onClick={saveToSupabase}
+  disabled={!dayEnd || saving}
+  onMouseDown={pressIn}
+  onMouseUp={pressOut}
+  onMouseLeave={pressOut}
+  style={{
+    ...compactButtonStyle,
+    minHeight: 48,
+    background:
+      !dayEnd || saving
+        ? "linear-gradient(180deg, #cbd5e1, #94a3b8)"
+        : "linear-gradient(180deg, #2563eb, #1d4ed8)",
+    border:
+      !dayEnd || saving
+        ? "1px solid #94a3b8"
+        : "1px solid #1d4ed8",
+    color: "white",
+    opacity: !dayEnd || saving ? 0.85 : 1,
+    boxShadow:
+      !dayEnd || saving
+        ? "0 8px 18px rgba(148,163,184,0.22)"
+        : "0 14px 28px rgba(37,99,235,0.26)",
+  }}
+>
+  {saving ? "Speichert..." : "Speichern"}
+</button>
       </div>
     </main>
   );

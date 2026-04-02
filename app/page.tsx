@@ -12,6 +12,8 @@ type Entry = {
   implement: string;
 };
 
+
+
 const emptyEntry = (): Entry => ({
   location: "",
   start: "",
@@ -89,6 +91,79 @@ export default function Home() {
       setEmployee(saved);
     }
   }, []);
+
+  useEffect(() => {
+  const saved = localStorage.getItem("stundenzettel_state");
+
+  if (saved) {
+    const parsed = JSON.parse(saved);
+
+    setEmployee(parsed.employee || null);
+    setDate(parsed.date || todayString());
+    setStatus(parsed.status || "arbeit");
+
+    setDayStart(parsed.dayStart || "");
+    setDayEnd(parsed.dayEnd || "");
+
+    setPause1Start(parsed.pause1Start || "");
+    setPause1End(parsed.pause1End || "");
+    setPause2Start(parsed.pause2Start || "");
+    setPause2End(parsed.pause2End || "");
+    setPause3Start(parsed.pause3Start || "");
+    setPause3End(parsed.pause3End || "");
+
+    setNotes(parsed.notes || "");
+
+    setDiesel(parsed.diesel || "");
+    setAdblue(parsed.adblue || "");
+    setOil(parsed.oil || "");
+
+    setEntries(parsed.entries || []);
+    setCurrentEntry(parsed.currentEntry || emptyEntry());
+  }
+}, []);
+
+useEffect(() => {
+  const dataToSave = {
+    employee,
+    date,
+    status,
+    dayStart,
+    dayEnd,
+    pause1Start,
+    pause1End,
+    pause2Start,
+    pause2End,
+    pause3Start,
+    pause3End,
+    notes,
+    diesel,
+    adblue,
+    oil,
+    entries,
+    currentEntry,
+  };
+
+  localStorage.setItem("stundenzettel_state", JSON.stringify(dataToSave));
+}, [
+  employee,
+  date,
+  status,
+  dayStart,
+  dayEnd,
+  pause1Start,
+  pause1End,
+  pause2Start,
+  pause2End,
+  pause3Start,
+  pause3End,
+  notes,
+  diesel,
+  adblue,
+  oil,
+  entries,
+  currentEntry,
+]);
 
   useEffect(() => {
     if (!entryMessage) return;
@@ -345,6 +420,7 @@ export default function Home() {
       console.error(err);
       alert("Fehler beim Speichern.");
       setSaving(false);
+      localStorage.removeItem("stundenzettel_state");
     }
   };
 

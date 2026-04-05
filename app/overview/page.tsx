@@ -82,9 +82,10 @@ const calculateEntryHours = (start: string | null, end: string | null) => {
   return `${(diff / 60).toFixed(2)} h`;
 };
 
-export default function ReportDetailPage() {
-  const params = useParams<{ id: string }>();
+export default function OverviewPage() {
   const supabase = getSupabase();
+  const params = useParams<{ id: string }>();
+  
 
   const [report, setReport] = useState<Report | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);

@@ -81,6 +81,11 @@ export default function Home() {
   const [adblue, setAdblue] = useState("");
   const [oil, setOil] = useState("");
 
+  const [locationsList, setLocationsList] = useState<any[]>([]);
+  const [activitiesList, setActivitiesList] = useState<any[]>([]);
+  const [tractorsList, setTractorsList] = useState<any[]>([]);
+  const [implementsList, setImplementsList] = useState<any[]>([]);
+
   const [screenState, setScreenState] = useState<"form" | "saved" | "goodbye">(
     "form"
   );
@@ -176,6 +181,22 @@ useEffect(() => {
     const timer = setTimeout(() => setScreenState("goodbye"), 2000);
     return () => clearTimeout(timer);
   }, [screenState]);
+
+  useEffect(() => {
+    const loadData = async () => {
+    const { data: locations } = await supabase.from("locations").select("*");
+    const { data: activities } = await supabase.from("activities").select("*");
+    const { data: tractors } = await supabase.from("tractors").select("*");
+    const { data: implementsData } = await supabase.from("implements").select("*");
+
+    setLocationsList(locations || []);
+    setActivitiesList(activities || []);
+    setTractorsList(tractors || []);
+    setImplementsList(implementsData || []);
+  };
+
+  loadData();
+}, []);
 
   const handleLogin = () => {
     if (!inputName.trim()) return;
@@ -815,49 +836,56 @@ useEffect(() => {
                 onChange={(e) => updateCurrentEntry("location", e.target.value)}
                 style={{ minHeight: 42, fontSize: 16, borderRadius: 10 }}
               >
-                <option value="">Schlag / Stall</option>
-                <option>Putenstall</option>
-                <option>Hähnchenstall</option>
-                <option>Duxtal</option>
-                <option>Königsberg</option>
-              </select>
+                <select value={currentEntry.location} onChange={(e) => updateCurrentEntry("location", e.target.value)}>
+  <option value="">Ort</option>
+  {locationsList.map((item) => (
+    <option key={item.id} value={item.name}>
+      {item.name}
+    </option>
+  ))}
+</select>
 
               <select
                 value={currentEntry.activity}
                 onChange={(e) => updateCurrentEntry("activity", e.target.value)}
                 style={{ minHeight: 42, fontSize: 16, borderRadius: 10 }}
-              >
+              ><select value={currentEntry.activity} onChange={(e) => updateCurrentEntry("activity", e.target.value)}>
                 <option value="">Tätigkeit</option>
-                <option>Ausmisten</option>
-                <option>Düngerstreuen</option>
-                <option>Walzen</option>
-                <option>Pflanzenschutz</option>
-                <option>Einlagerung</option>
-                <option>Auslagerung</option>
-              </select>
+                {activitiesList.map((item) => (
+                <option key={item.id} value={item.name}>
+                {item.name}
+                </option>
+              ))}
+            </select>
+                
 
               <select
                 value={currentEntry.tractor}
                 onChange={(e) => updateCurrentEntry("tractor", e.target.value)}
                 style={{ minHeight: 42, fontSize: 16, borderRadius: 10 }}
               >
-                <option value="">Traktor</option>
-                <option>LD 222</option>
-                <option>KG 700</option>
-              </select>
+                <select value={currentEntry.tractor} onChange={(e) => updateCurrentEntry("tractor", e.target.value)}>
+  <option value="">Traktor</option>
+  {tractorsList.map((item) => (
+    <option key={item.id} value={item.name}>
+      {item.name}
+    </option>
+  ))}
+</select>
 
               <select
                 value={currentEntry.implement}
                 onChange={(e) => updateCurrentEntry("implement", e.target.value)}
                 style={{ minHeight: 42, fontSize: 16, borderRadius: 10 }}
               >
-                <option value="">Gerät</option>
-                <option>Spritze</option>
-                <option>Walze</option>
-                <option>Primera 8XL</option>
-                <option>Leeb 8000</option>
-                <option>Lexion8900</option>
-              </select>
+                <select value={currentEntry.implement} onChange={(e) => updateCurrentEntry("implement", e.target.value)}>
+  <option value="">Gerät</option>
+  {implementsList.map((item) => (
+    <option key={item.id} value={item.name}>
+      {item.name}
+    </option>
+  ))}
+</select>
 
               <button
                 onClick={handleEntryTimeButton}

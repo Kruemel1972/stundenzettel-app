@@ -836,7 +836,8 @@ useEffect(() => {
                 onChange={(e) => updateCurrentEntry("location", e.target.value)}
                 style={{ minHeight: 42, fontSize: 16, borderRadius: 10 }}
               >
-                <select value={currentEntry.location} onChange={(e) => updateCurrentEntry("location", e.target.value)}>
+                <select 
+                value={currentEntry.location} onChange={(e) => updateCurrentEntry("location", e.target.value)}>
   <option value="">Ort</option>
   {locationsList.map((item) => (
     <option key={item.id} value={item.name}>
@@ -845,18 +846,17 @@ useEffect(() => {
   ))}
 </select>
 
-              <select
-                value={currentEntry.activity}
-                onChange={(e) => updateCurrentEntry("activity", e.target.value)}
-                style={{ minHeight: 42, fontSize: 16, borderRadius: 10 }}
-              ><select value={currentEntry.activity} onChange={(e) => updateCurrentEntry("activity", e.target.value)}>
-                <option value="">Tätigkeit</option>
-                {activitiesList.map((item) => (
-                <option key={item.id} value={item.name}>
-                {item.name}
-                </option>
-              ))}
-            </select>
+             <select
+  value={currentEntry.activity}
+  onChange={(e) => updateCurrentEntry("activity", e.target.value)}
+>
+  <option value="">Tätigkeit</option>
+  {activitiesList.map((item) => (
+    <option key={item.id} value={item.name}>
+      {item.name}
+    </option>
+  ))}
+</select>
                 
 
               <select

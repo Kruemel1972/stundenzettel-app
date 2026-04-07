@@ -873,12 +873,7 @@ useEffect(() => {
   ))}
 </select>
 
-              <select
-                value={currentEntry.implement}
-                onChange={(e) => updateCurrentEntry("implement", e.target.value)}
-                style={{ minHeight: 42, fontSize: 16, borderRadius: 10 }}
-              >
-                <select value={currentEntry.implement} onChange={(e) => updateCurrentEntry("implement", e.target.value)}>
+                            <select value={currentEntry.implement} onChange={(e) => updateCurrentEntry("implement", e.target.value)}>
   <option value="">Gerät</option>
   {implementsList.map((item) => (
     <option key={item.id} value={item.name}>

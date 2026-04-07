@@ -821,91 +821,92 @@ useEffect(() => {
         {status === "arbeit" && (
           <>
             <div
-              style={{
-                marginBottom: 10,
-                border: "1px solid rgba(15,23,42,0.08)",
-                borderRadius: 16,
-                padding: 10,
-                display: "grid",
-                gap: 8,
-                background: "rgba(248,250,252,0.92)",
-              }}
-            >
-              <select
-                value={currentEntry.location}
-                onChange={(e) => updateCurrentEntry("location", e.target.value)}
-                style={{ minHeight: 42, fontSize: 16, borderRadius: 10 }}
-              >
-                <select 
-                value={currentEntry.location} onChange={(e) => updateCurrentEntry("location", e.target.value)}>
-  <option value="">Ort</option>
-  {locationsList.map((item) => (
-    <option key={item.id} value={item.name}>
-      {item.name}
-    </option>
-  ))}
-</select>
-
-             <select
-  value={currentEntry.activity}
-  onChange={(e) => updateCurrentEntry("activity", e.target.value)}
+  style={{
+    marginBottom: 10,
+    border: "1px solid rgba(15,23,42,0.08)",
+    borderRadius: 16,
+    padding: 10,
+    display: "grid",
+    gap: 8,
+    background: "rgba(248,250,252,0.92)",
+  }}
 >
-  <option value="">Tätigkeit</option>
-  {activitiesList.map((item) => (
-    <option key={item.id} value={item.name}>
-      {item.name}
-    </option>
-  ))}
-</select>
-                
+  <select
+    value={currentEntry.location}
+    onChange={(e) => updateCurrentEntry("location", e.target.value)}
+    style={{ minHeight: 42, fontSize: 16, borderRadius: 10 }}
+  >
+    <option value="">Schlag / Stall</option>
+    {locationsList.map((item) => (
+      <option key={item.id} value={item.name}>
+        {item.name}
+      </option>
+    ))}
+  </select>
 
-              <select
-                value={currentEntry.tractor}
-                onChange={(e) => updateCurrentEntry("tractor", e.target.value)}
-                style={{ minHeight: 42, fontSize: 16, borderRadius: 10 }}
-              >
-                <select value={currentEntry.tractor} onChange={(e) => updateCurrentEntry("tractor", e.target.value)}>
-  <option value="">Traktor</option>
-  {tractorsList.map((item) => (
-    <option key={item.id} value={item.name}>
-      {item.name}
-    </option>
-  ))}
-</select>
+  <select
+    value={currentEntry.activity}
+    onChange={(e) => updateCurrentEntry("activity", e.target.value)}
+    style={{ minHeight: 42, fontSize: 16, borderRadius: 10 }}
+  >
+    <option value="">Tätigkeit</option>
+    {activitiesList.map((item) => (
+      <option key={item.id} value={item.name}>
+        {item.name}
+      </option>
+    ))}
+  </select>
 
-                            <select value={currentEntry.implement} onChange={(e) => updateCurrentEntry("implement", e.target.value)}>
-  <option value="">Gerät</option>
-  {implementsList.map((item) => (
-    <option key={item.id} value={item.name}>
-      {item.name}
-    </option>
-  ))}
-</select>
+  <select
+    value={currentEntry.tractor}
+    onChange={(e) => updateCurrentEntry("tractor", e.target.value)}
+    style={{ minHeight: 42, fontSize: 16, borderRadius: 10 }}
+  >
+    <option value="">Traktor</option>
+    {tractorsList.map((item) => (
+      <option key={item.id} value={item.name}>
+        {item.name}
+      </option>
+    ))}
+  </select>
 
-              <button
-                onClick={handleEntryTimeButton}
-                disabled={!!currentEntry.start && !!currentEntry.end}
-                onMouseDown={pressIn}
-                onMouseUp={pressOut}
-                onMouseLeave={pressOut}
-                style={{
-                  ...compactButtonStyle,
-                  opacity: !!currentEntry.start && !!currentEntry.end ? 0.55 : 1,
-                }}
-              >
-                {entryTimeButtonLabel()}
-              </button>
+  <select
+    value={currentEntry.implement}
+    onChange={(e) => updateCurrentEntry("implement", e.target.value)}
+    style={{ minHeight: 42, fontSize: 16, borderRadius: 10 }}
+  >
+    <option value="">Gerät</option>
+    {implementsList.map((item) => (
+      <option key={item.id} value={item.name}>
+        {item.name}
+      </option>
+    ))}
+  </select>
 
-              <button
-                onClick={addCurrentEntry}
-                onMouseDown={pressIn}
-                onMouseUp={pressOut}
-                onMouseLeave={pressOut}
-                style={compactButtonStyle}
-              >
-                Tätigkeit hinzufügen
-              </button>
-            </div>
+  <button
+    onClick={handleEntryTimeButton}
+    disabled={!!currentEntry.start && !!currentEntry.end}
+    onMouseDown={pressIn}
+    onMouseUp={pressOut}
+    onMouseLeave={pressOut}
+    style={{
+      ...compactButtonStyle,
+      opacity: !!currentEntry.start && !!currentEntry.end ? 0.55 : 1,
+    }}
+  >
+    {entryTimeButtonLabel()}
+  </button>
+
+  <button
+    onClick={addCurrentEntry}
+    onMouseDown={pressIn}
+    onMouseUp={pressOut}
+    onMouseLeave={pressOut}
+    style={compactButtonStyle}
+  >
+    Tätigkeit hinzufügen
+  </button>
+</div>
 
             <div
               style={{

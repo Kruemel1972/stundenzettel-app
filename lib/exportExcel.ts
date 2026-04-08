@@ -84,6 +84,11 @@ function monthStart(isoDate: string | null) {
   return `${y}-${m}-01`;
 }
 
+function formatTime(value: string | null) {
+  if (!value) return "";
+  return value.slice(0, 5);
+}
+
 export function exportStundenzettelExcel(
   reports: DailyReport[],
   _entries: ReportEntry[]
@@ -93,14 +98,14 @@ export function exportStundenzettelExcel(
     Mitarbeiter: r.employee || "",
     Datum: r.report_date || "",
     Status: r.status || "",
-    Arbeitsbeginn: r.day_start || "",
-    Arbeitsende: r.day_end || "",
-    "Pause1 Start": r.pause1_start || "",
-    "Pause1 Ende": r.pause1_end || "",
-    "Pause2 Start": r.pause2_start || "",
-    "Pause2 Ende": r.pause2_end || "",
-    "Pause3 Start": r.pause3_start || "",
-    "Pause3 Ende": r.pause3_end || "",
+    Arbeitsbeginn: formatTime(r.day_start),
+Arbeitsende: formatTime(r.day_end),
+"Pause1 Start": formatTime(r.pause1_start),
+"Pause1 Ende": formatTime(r.pause1_end),
+"Pause2 Start": formatTime(r.pause2_start),
+"Pause2 Ende": formatTime(r.pause2_end),
+"Pause3 Start": formatTime(r.pause3_start),
+"Pause3 Ende": formatTime(r.pause3_end),
     Bemerkungen: r.notes || "",
     Bruttostunden: grossHours(r.day_start, r.day_end),
     "Pausengesamt (Std)": toHours(totalPauseMinutes(r)),

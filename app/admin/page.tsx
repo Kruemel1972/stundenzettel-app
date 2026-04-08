@@ -10,20 +10,16 @@ type Item = {
   cost_per_hour?: number | null;
 };
 
-<button onClick={handleExcelExport} style={buttonStyle}>
-  Excel Export
-</button>
-
 export default function AdminPage() {
   const supabase = getSupabase();
 
-    const handleExcelExport = async () => {
-  const { data: reports, error: reportsError } = await supabase
+  const handleExcelExport = async () => {
+    const { data: reports, error: reportsError } = await supabase
     .from("daily_reports")
     .select("*")
     .order("report_date", { ascending: true });
 
-  const { data: entries, error: entriesError } = await supabase
+    const { data: entries, error: entriesError } = await supabase
     .from("report_entries")
     .select("*")
     .order("daily_report_id", { ascending: true });
@@ -102,6 +98,10 @@ export default function AdminPage() {
   return (
     <main style={{ padding: 20, fontFamily: "Arial" }}>
       <h1>Admin – Stammdaten</h1>
+
+      <button onClick={handleExcelExport} style={{ marginBottom: 20 }}>
+      Excel Export
+      </button>
 
       <div style={{ marginBottom: 20 }}>
         <button onClick={() => setTab("activities")}>Tätigkeiten</button>

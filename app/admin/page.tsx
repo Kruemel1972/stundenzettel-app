@@ -15,7 +15,9 @@ type Item = {
 </button>
 
 export default function AdminPage() {
-  const handleExcelExport = async () => {
+  const supabase = getSupabase();
+
+    const handleExcelExport = async () => {
   const { data: reports, error: reportsError } = await supabase
     .from("daily_reports")
     .select("*")
@@ -34,8 +36,6 @@ export default function AdminPage() {
 
   exportStundenzettelExcel(reports || [], entries || []);
 };
-
-  const supabase = getSupabase();
 
   const [tab, setTab] = useState("activities");
 

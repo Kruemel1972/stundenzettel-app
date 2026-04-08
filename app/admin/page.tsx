@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getSupabase } from "../../lib/supabase";
+import { exportStundenzettelExcel } from "../../lib/exportExcel";
 
 type Item = {
   id: string;
@@ -9,7 +10,31 @@ type Item = {
   cost_per_hour?: number | null;
 };
 
+<button onClick={handleExcelExport} style={buttonStyle}>
+  Excel Export
+</button>
+
 export default function AdminPage() {
+  const handleExcelExport = async () => {
+  const { data: reports, error: reportsError } = await supabase
+    .from("daily_reports")
+    .select("*")
+    .order("report_date", { ascending: true });
+
+  const { data: entries, error: entriesError } = await supabase
+    .from("report_entries")
+    .select("*")
+    .order("daily_report_id", { ascending: true });
+
+  if (reportsError || entriesError) {
+    console.error(reportsError, entriesError);
+    alert("Fehler beim Export.");
+    return;
+  }
+
+  exportStundenzettelExcel(reports || [], entries || []);
+};
+
   const supabase = getSupabase();
 
   const [tab, setTab] = useState("activities");
